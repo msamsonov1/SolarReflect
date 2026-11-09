@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SolarReflect: Lunar Polar Tower Steerable Heliostat Mirror Sentry</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- MathJax v3 Bulletproof Setup -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #03050a;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .formula-box {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 0.5rem;
+      padding: 0.85rem;
+      text-align: center;
+      color: #38bdf8;
+      font-size: 0.95rem;
+      overflow-x: auto;
+      margin: 0.5rem 0;
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #0284c7;
+    }
+
+    /* Neon glow effects */
+    .glow-cyan {
+      box-shadow: 0 0 15px -3px rgba(6, 182, 212, 0.35);
+    }
+    .glow-amber {
+      box-shadow: 0 0 15px -3px rgba(245, 158, 11, 0.35);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#03050a]">
+
+  <!-- Top Global Header -->
+  <header class="border-b border-gray-800/80 bg-gray-950/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-600 to-amber-500 flex items-center justify-center p-2 shadow-lg shadow-cyan-900/40">
+          <i data-lucide="sun-medium" class="text-white w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-lg text-white tracking-wide">SolarReflect</span>
+            <span class="px-2 py-0.5 text-xs font-mono-code font-semibold rounded-full bg-cyan-950 border border-cyan-800 text-cyan-400">NASA SBIR/STTR</span>
+            <span class="px-2 py-0.5 text-xs font-mono-code rounded bg-amber-950/70 border border-amber-800/80 text-amber-300">TRL-4 Sim</span>
+          </div>
+          <p class="text-xs text-gray-400">Lunar Polar Tower Steerable Heliostat Mirror Sentry | Shackleton Rim PSR Relay</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex space-x-1 sm:space-x-2 bg-gray-900/60 p-1 rounded-xl border border-gray-800/80">
+        <button id="tabBtnSim" onclick="switchTab('sim')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-2 bg-cyan-600 text-white shadow-md shadow-cyan-950">
+          <i data-lucide="activity" class="w-4 h-4"></i>
+          <span>Live Sentry HUD</span>
+        </button>
+        <button id="tabBtnPhysics" onclick="switchTab('physics')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-2 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50">
+          <i data-lucide="atom" class="w-4 h-4"></i>
+          <span>Physics & Kinematics</span>
+        </button>
+        <button id="tabBtnProposal" onclick="switchTab('proposal')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-2 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+          <span>NASA Proposal</span>
+        </button>
+        <button id="tabBtnARR" onclick="switchTab('arr')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-2 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50">
+          <i data-lucide="trending-up" class="w-4 h-4"></i>
+          <span>Commercial ARR ($218M)</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: LIVE SIMULATION & SENTRY HUD        -->
+    <!-- ========================================== -->
+    <div id="viewSim" class="space-y-6">
+      
+      <!-- Top Status Banner -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-gray-900/60 border border-gray-800 rounded-xl p-4 flex items-center space-x-3">
+          <div class="p-2.5 rounded-lg bg-cyan-950/80 border border-cyan-800 text-cyan-400">
+            <i data-lucide="compass" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-xs text-gray-400 font-mono-code uppercase">Gimbal Phase ($\theta$)</div>
+            <div id="telemetryPhase" class="text-lg font-bold font-mono-code text-white">0.000°</div>
+          </div>
+        </div>
+
+        <div class="bg-gray-900/60 border border-gray-800 rounded-xl p-4 flex items-center space-x-3">
+          <div class="p-2.5 rounded-lg bg-amber-950/80 border border-amber-800 text-amber-400">
+            <i data-lucide="zap" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-xs text-gray-400 font-mono-code uppercase">Crater Flux ($E$)</div>
+            <div id="telemetryEnergy" class="text-lg font-bold font-mono-code text-amber-300">0.0 kW/m²</div>
+          </div>
+        </div>
+
+        <div class="bg-gray-900/60 border border-gray-800 rounded-xl p-4 flex items-center space-x-3">
+          <div class="p-2.5 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-400">
+            <i data-lucide="git-pull-request" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-xs text-gray-400 font-mono-code uppercase">Mast Flex Warping ($\Delta\theta$)</div>
+            <div id="telemetryWarp" class="text-lg font-bold font-mono-code text-rose-300">+0.00 mrad</div>
+          </div>
+        </div>
+
+        <div class="bg-gray-900/60 border border-gray-800 rounded-xl p-4 flex items-center space-x-3">
+          <div id="sentryStatusIcon" class="p-2.5 rounded-lg bg-emerald-950/80 border border-emerald-800 text-emerald-400">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-xs text-gray-400 font-mono-code uppercase">Sentry Loop Status</div>
+            <div id="sentryStatusBadge" class="text-sm font-semibold font-mono-code text-emerald-400">NOMINAL CORRELATION</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Interactive Display: Mast View & Phase Space Curve -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: 2D Lunar Tower Physical Canvas (7 cols) -->
+        <div class="lg:col-span-7 bg-gray-900/50 border border-gray-800 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden shadow-2xl">
+          <div class="flex items-center justify-between mb-2 z-10">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+              <h3 class="text-sm font-bold tracking-wide uppercase text-gray-200">20-Meter Mast & PSR Crater Geometry</h3>
+            </div>
+            <span class="text-xs font-mono-code text-gray-400 bg-gray-950 px-2 py-1 rounded border border-gray-800">Shackleton Rim (89.9°S)</span>
+          </div>
+
+          <!-- Canvas Container -->
+          <div class="relative w-full h-[380px] bg-[#02040a] rounded-xl overflow-hidden border border-gray-800/80">
+            <canvas id="lunarCanvas" class="w-full h-full block"></canvas>
+            <div class="absolute bottom-2 left-2 text-[11px] font-mono-code text-gray-400 bg-gray-950/80 px-2 py-1 rounded border border-gray-800">
+              Low-Sun Grazing: 1.5° Elevation | Receiver Depth: -2.4 km
+            </div>
+          </div>
+
+          <!-- Canvas Footer Telemetry Summary -->
+          <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-800/70 text-xs font-mono-code">
+            <div><span class="text-gray-500">Mast Tip Deflection:</span> <span id="mastTipMm" class="text-cyan-300 font-semibold">0.0 mm</span></div>
+            <div><span class="text-gray-500">Backlash Error:</span> <span id="backlashArcsec" class="text-rose-400 font-semibold">14.2 arcsec</span></div>
+            <div><span class="text-gray-500">Receiver Intercept:</span> <span id="interceptPct" class="text-emerald-400 font-semibold">99.4%</span></div>
+          </div>
+        </div>
+
+        <!-- Right: Diagnostic Phase-Space (Energy E vs Phase Angle θ) (5 cols) -->
+        <div class="lg:col-span-5 bg-gray-900/50 border border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow-2xl">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="text-sm font-bold tracking-wide uppercase text-gray-200">Phase-Space Inversion ($E$ vs $\theta$)</h3>
+              <p class="text-xs text-gray-400">Energy Reception Corridor vs Mechanical Gimbal Angle</p>
+            </div>
+            <span class="px-2 py-0.5 text-xs font-mono-code rounded bg-cyan-950 text-cyan-300 border border-cyan-800">Live Kalman State</span>
+          </div>
+
+          <!-- Chart.js Container -->
+          <div class="relative w-full h-[380px] bg-[#02040a] rounded-xl p-2 border border-gray-800/80">
+            <canvas id="phaseSpaceChart"></canvas>
+          </div>
+
+          <div class="mt-3 pt-3 border-t border-gray-800/70 text-xs font-mono-code text-gray-400 flex items-center justify-between">
+            <span class="flex items-center space-x-1.5">
+              <span class="w-2.5 h-0.5 bg-emerald-400 inline-block"></span>
+              <span>Nominal Baseline</span>
+            </span>
+            <span class="flex items-center space-x-1.5">
+              <span class="w-2.5 h-0.5 bg-rose-500 inline-block"></span>
+              <span>Misalignment Boundary</span>
+            </span>
+            <span class="flex items-center space-x-1.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 inline-block"></span>
+              <span>Observed $(\theta, E)$</span>
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Closed Loop Control & Multi-Variate Fault Injection Console -->
+      <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-6 shadow-2xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-800">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+              <i data-lucide="sliders" class="w-5 h-5 text-cyan-400"></i>
+              <span>Autonomous Sentry Closed-Loop Kinematic Controller</span>
+            </h3>
+            <p class="text-xs text-gray-400 mt-1">Live correlation engine matching crater reception flux $E$ to mechanical phase $\theta$ under simulated solar mast flexing.</p>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2 bg-gray-950 px-3 py-1.5 rounded-lg border border-gray-800">
+              <span class="text-xs font-mono-code text-gray-400">Offset Inversion:</span>
+              <button id="toggleClosedLoopBtn" onclick="toggleClosedLoop()" class="px-3 py-1 rounded text-xs font-bold font-mono-code uppercase transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-950 hover:bg-emerald-500">
+                ENABLED (CLOSED LOOP)
+              </button>
+            </div>
+            <button onclick="resetNominalState()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs rounded-lg font-mono-code transition flex items-center space-x-1">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Zero Offsets</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- Slider 1: Solar Mast Thermal Flex -->
+          <div class="space-y-2 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80">
+            <div class="flex justify-between items-center text-xs font-mono-code">
+              <span class="text-gray-300">Mast Sunlight Thermal Flex ($\Delta T$):</span>
+              <span id="mastFlexVal" class="text-amber-400 font-bold">145 K (ΔL = +18.4 mm)</span>
+            </div>
+            <input id="sliderMastFlex" type="range" min="0" max="300" value="145" class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-amber-500" oninput="updateSliders()">
+            <div class="flex justify-between text-[10px] font-mono-code text-gray-500">
+              <span>0 K (Shadow)</span>
+              <span>150 K (Nominal)</span>
+              <span>300 K (Peak Lunar Noon)</span>
+            </div>
+          </div>
+
+          <!-- Slider 2: Azimuth Harmonic Backlash -->
+          <div class="space-y-2 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80">
+            <div class="flex justify-between items-center text-xs font-mono-code">
+              <span class="text-gray-300">Drive Harmonic Backlash ($\delta_{\text{mech}}$):</span>
+              <span id="backlashVal" class="text-rose-400 font-bold">± 18.5 arcsec</span>
+            </div>
+            <input id="sliderBacklash" type="range" min="0" max="80" value="18" class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-rose-500" oninput="updateSliders()">
+            <div class="flex justify-between text-[10px] font-mono-code text-gray-500">
+              <span>0 (Harmonic Zero)</span>
+              <span>40 arcsec</span>
+              <span>80 arcsec (Gear Wear)</span>
+            </div>
+          </div>
+
+          <!-- Slider 3: Orbital Sun Elevation Velocity -->
+          <div class="space-y-2 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80">
+            <div class="flex justify-between items-center text-xs font-mono-code">
+              <span class="text-gray-300">Sun Orbit Rate ($\dot{\Omega}_{\odot}$):</span>
+              <span id="orbitSpeedVal" class="text-cyan-400 font-bold">1.0x (Lunar Sidereal)</span>
+            </div>
+            <input id="sliderOrbitSpeed" type="range" min="1" max="10" value="3" class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-cyan-500" oninput="updateSliders()">
+            <div class="flex justify-between text-[10px] font-mono-code text-gray-500">
+              <span>0.5x Slow</span>
+              <span>3x Sim Speed</span>
+              <span>10x Accelerated</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Quick Fault Injections -->
+        <div class="mt-4 pt-4 border-t border-gray-800/70 flex flex-wrap items-center gap-3">
+          <span class="text-xs font-mono-code text-gray-400">Direct Fault Injections:</span>
+          <button onclick="injectFault('thermal_snap')" class="px-2.5 py-1 text-xs bg-amber-950/50 hover:bg-amber-900/60 border border-amber-800 text-amber-300 rounded font-mono-code transition">
+            ⚡ Mast Thermal Shadow Snap (-180K)
+          </button>
+          <button onclick="injectFault('gear_stick')" class="px-2.5 py-1 text-xs bg-rose-950/50 hover:bg-rose-900/60 border border-rose-800 text-rose-300 rounded font-mono-code transition">
+            ⚙ Azimuth Backlash Jitter (45 arcsec)
+          </button>
+          <button onclick="injectFault('crater_drift')" class="px-2.5 py-1 text-xs bg-purple-950/50 hover:bg-purple-900/60 border border-purple-800 text-purple-300 rounded font-mono-code transition">
+            🎯 Target Beam Decoupling
+          </button>
+        </div>
+      </div>
+
+      <!-- Secondary Telemetry Strips -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center space-x-2">
+              <i data-lucide="line-chart" class="w-4 h-4 text-cyan-400"></i>
+              <span>Receiver Intercepted Energy Time-Series ($E$)</span>
+            </h4>
+            <span class="text-xs font-mono-code text-emerald-400" id="avgFluxLabel">Mean: 1.35 kW/m²</span>
+          </div>
+          <div class="relative w-full h-[180px] bg-[#02040a] rounded-xl p-2 border border-gray-800">
+            <canvas id="energyStreamChart"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center space-x-2">
+              <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+              <span>Autonomous Correction Kinematic Offset ($\Delta\theta_{\text{sentry}}$)</span>
+            </h4>
+            <span class="text-xs font-mono-code text-cyan-400" id="correctionLabel">Corr: -2.34 mrad</span>
+          </div>
+          <div class="relative w-full h-[180px] bg-[#02040a] rounded-xl p-2 border border-gray-800">
+            <canvas id="correctionStreamChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: CORE PHYSICS & MATHEMATICAL MODEL   -->
+    <!-- ========================================== -->
+    <div id="viewPhysics" class="hidden space-y-6">
+      
+      <!-- Physics Header Banner -->
+      <div class="bg-gradient-to-r from-cyan-950/40 via-gray-900/60 to-purple-950/40 border border-gray-800 p-6 rounded-2xl">
+        <div class="flex items-center space-x-3 mb-2">
+          <div class="p-2 rounded-lg bg-cyan-600 text-white">
+            <i data-lucide="book-open" class="w-5 h-5"></i>
+          </div>
+          <h2 class="text-xl font-bold text-white tracking-wide">Core Mathematical Framework & Astrodynamic Optics</h2>
+        </div>
+        <p class="text-sm text-gray-300 max-w-4xl">
+          Lunar polar heliostats deployed on crater rims (e.g., Shackleton, Shoemaker) operate under grazing solar illumination ($0.5^\circ \le \beta \le 1.8^\circ$). Unilateral solar radiation heats one face of the 20-meter composite mast to $+120^\circ\text{C}$ while the shadowed back chills to $-130^\circ\text{C}$, producing structural thermal camber. SolarReflect establishes a real-time closed-loop state inversion between crater thermal power density ($E$) and drive gimbal phase ($\theta$).
+        </p>
+      </div>
+
+      <!-- 4 High-Density Technical Cards with Formatted MathJax -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Card 1: Thermal Elastic Mast Deflection -->
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2 text-cyan-400 mb-1">
+              <i data-lucide="ruler" class="w-4 h-4"></i>
+              <h3 class="text-sm font-bold uppercase tracking-wider">1. Mast Thermal Camber & Angular Tilt</h3>
+            </div>
+            <p class="text-xs text-gray-400">
+              Differential solar flux absorption across the tubular mast cross-section induces a temperature gradient $\Delta T(z)$. Euler-Bernoulli beam theory with thermal strains determines mirror gimbal angular misalignment $\theta_{\text{warp}}$:
+            </p>
+          </div>
+
+          <div class="formula-box">
+            $$\kappa(z) = \frac{\alpha_{\text{CTE}} \cdot \Delta T(z)}{D}, \quad \theta_{\text{warp}} = \int_0^L \kappa(z)\,dz = \frac{\alpha_{\text{CTE}} \cdot \overline{\Delta T} \cdot L}{D}$$
+          </div>
+
+          <div class="text-[11px] font-mono-code text-gray-400 space-y-1 bg-gray-950/50 p-2.5 rounded border border-gray-800">
+            <div>$\alpha_{\text{CTE}} = 1.2 \times 10^{-6}\ \text{K}^{-1}$ (CFRP Ultra-Low Expansion Mast)</div>
+            <div>$L = 20.0\ \text{m}$ (Mast Height) | $D = 0.35\ \text{m}$ (Mast Outer Diameter)</div>
+            <div>$\overline{\Delta T} \approx 180\ \text{K}$ (Sunlit/Shadow Differential across wall)</div>
+            <div class="text-cyan-300 font-semibold">Resulting Uncorrected Gimbal Tilt: $\theta_{\text{warp}} \approx 1.23\ \text{mrad}$ ($254\ \text{arcsec}$)</div>
+          </div>
+        </div>
+
+        <!-- Card 2: Lunar Crater Energy Reception Profile -->
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2 text-amber-400 mb-1">
+              <i data-lucide="sun" class="w-4 h-4"></i>
+              <h3 class="text-sm font-bold uppercase tracking-wider">2. Crater Target Flux Convolution ($E$)</h3>
+            </div>
+            <p class="text-xs text-gray-400">
+              The heliostat projects a Gaussian-convolved solar disc image into the Permanently Shadowed Region (PSR). Crater surface irradiance $E(\theta)$ is governed by gimbal mechanical phase $\theta$ and optical throw distance $R$:
+            </p>
+          </div>
+
+          <div class="formula-box">
+            $$E(\theta) = E_0 \cdot \eta_{\text{refl}} \cdot \exp\left( -\frac{4\ln(2) \cdot [2R(\theta - \theta_0 - \theta_{\text{warp}})]^2}{w_{\text{spot}}^2} \right)$$
+          </div>
+
+          <div class="text-[11px] font-mono-code text-gray-400 space-y-1 bg-gray-950/50 p-2.5 rounded border border-gray-800">
+            <div>$E_0 = 1361\ \text{W/m}^2$ (Solar Constant at 1 AU)</div>
+            <div>$\eta_{\text{refl}} = 0.94$ (Silver-dielectric protected multilayer mirror)</div>
+            <div>$R = 2400\ \text{m}$ (Heliostat to Crater Floor Target Range)</div>
+            <div class="text-amber-300 font-semibold">At $1.2\ \text{mrad}$ error: Beam center drifts by $2.88\ \text{m}$, shedding 88% flux</div>
+          </div>
+        </div>
+
+        <!-- Card 3: Diagnostic State Observer & Kinematic Inversion -->
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2 text-emerald-400 mb-1">
+              <i data-lucide="cpu" class="w-4 h-4"></i>
+              <h3 class="text-sm font-bold uppercase tracking-wider">3. Live Correlation Observer & Inversion</h3>
+            </div>
+            <p class="text-xs text-gray-400">
+              Rather than relying on open-loop encoders prone to mast bending and backlash, the sentry computer continuously correlates crater receiver telemetry $(E)$ with commanded mechanical phase $(\theta)$:
+            </p>
+          </div>
+
+          <div class="formula-box">
+            $$\Delta \hat{\theta}_{\text{warp}} = \arg\max_{\delta} \int_{t-\tau}^t E(t') \cdot \mathcal{S}\left(\theta(t') - \delta\right) dt'$$
+          </div>
+
+          <div class="text-[11px] font-mono-code text-gray-400 space-y-1 bg-gray-950/50 p-2.5 rounded border border-gray-800">
+            <div>$\mathcal{S}(\theta)$: Nominal symmetric synthetic spread function template</div>
+            <div>$\tau = 4.2\ \text{s}$: Sliding estimation window with recursive gradient ascent</div>
+            <div>Backlash isolation: Directional sign hysteresis gate $\operatorname{sgn}(\dot{\theta})$</div>
+            <div class="text-emerald-300 font-semibold">Closed-loop pointing stability: $\le 12\ \mu\text{rad}$ ($2.47\ \text{arcsec}$)</div>
+          </div>
+        </div>
+
+        <!-- Card 4: Optomechanical & Cryogenic Hardware Specifications -->
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 space-y-3 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2 text-purple-400 mb-1">
+              <i data-lucide="shield" class="w-4 h-4"></i>
+              <h3 class="text-sm font-bold uppercase tracking-wider">4. Optomechanical Hardware Envelope</h3>
+            </div>
+            <p class="text-xs text-gray-400">
+              The system is designed for survive-the-night cryogenic lunar polar environments without fluid-lubricated bearing lockup:
+            </p>
+          </div>
+
+          <div class="formula-box">
+            $$\tau_{\text{settle}} \le 180\ \text{ms}, \quad \sigma_{\theta} = \sqrt{\sigma_{\text{encoder}}^2 + \sigma_{\text{backlash}}^2 + \sigma_{\text{thermal}}^2} \xrightarrow[\text{Sentry}]{\quad} \sigma_{\text{opt}} \le 8\ \mu\text{rad}$$
+          </div>
+
+          <div class="text-[11px] font-mono-code text-gray-400 space-y-1 bg-gray-950/50 p-2.5 rounded border border-gray-800">
+            <div>Aperture: $3.2\ \text{m} \times 3.2\ \text{m}$ Ultralight Silicon Carbide Core ($14.8\ \text{kg/m}^2$)</div>
+            <div>Gimbal Drive: Dual Direct-Drive Frameless PMSG + Harmonic Reducers (MoS2 Solid Lubed)</div>
+            <div>Crater Flux Sensor: 4-Quadrant Thermopile Array with $10\ \text{Hz}$ LoRa Space RF Return</div>
+            <div class="text-purple-300 font-semibold">Mass Budget: 114 kg total tower top payload (fits CLPS landers)</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: $225K NASA SBIR/STTR PROPOSAL       -->
+    <!-- ========================================== -->
+    <div id="viewProposal" class="hidden space-y-6">
+      
+      <!-- Solicitation Banner -->
+      <div class="bg-gradient-to-r from-blue-950/40 via-gray-900/60 to-cyan-950/40 border border-blue-900/60 p-6 rounded-2xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="px-2.5 py-1 text-xs font-mono-code font-bold rounded bg-blue-900 text-blue-200">NASA SBIR/STTR 2026 Phase I</span>
+              <span class="text-xs font-mono-code text-cyan-400">Topic: Z1.04-3291 (Lunar Surface Solar Power Systems)</span>
+            </div>
+            <h2 class="text-xl font-bold text-white tracking-wide mt-2">Autonomous Thermal Warping & Backlash Inversion for High-Aspect Heliostat Masts</h2>
+          </div>
+          <div class="bg-gray-950/80 border border-gray-800 p-3 rounded-xl text-right font-mono-code">
+            <div class="text-xs text-gray-400">Total Phase I Budget</div>
+            <div class="text-xl font-bold text-emerald-400">$225,000</div>
+            <div class="text-[10px] text-gray-500">6-Month Duration | TRL 3 $\to$ TRL 5</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Partner Allocation & Budget Structure -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Subcontract Partner</h3>
+            <span class="px-2 py-0.5 rounded text-xs font-mono-code bg-amber-950 text-amber-300 border border-amber-800">STTR 30.0% Allocation</span>
+          </div>
+          <div class="p-3 bg-gray-950/80 rounded-xl border border-gray-800">
+            <div class="text-sm font-bold text-cyan-400">University of Central Florida (UCF)</div>
+            <div class="text-xs text-gray-400 mt-0.5">Center for Advanced Turbomachinery & Energy Research (CATER)</div>
+            <div class="text-xs font-mono-code text-emerald-400 mt-2 font-semibold">Subcontract Total: $67,500.00</div>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            UCF CATER provides high-vacuum cryo-thermal test rigs and the 4-meter vacuum belljar for simulating unilateral lunar thermal flux gradients across scaled composite masts.
+          </p>
+        </div>
+
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Prime Small Business</h3>
+            <span class="px-2 py-0.5 rounded text-xs font-mono-code bg-cyan-950 text-cyan-300 border border-cyan-800">70.0% Allocation</span>
+          </div>
+          <div class="p-3 bg-gray-950/80 rounded-xl border border-gray-800">
+            <div class="text-sm font-bold text-white">SolarReflect Space Dynamics LLC</div>
+            <div class="text-xs text-gray-400 mt-0.5">Flight Software & Embedded Systems Division</div>
+            <div class="text-xs font-mono-code text-emerald-400 mt-2 font-semibold">Direct Allocation: $157,500.00</div>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            Lead developer of the real-time kinematic Sentry inversion kernel, Kalman flux estimator, and RTEMS-compliant embedded flight controller for rad-hard RISC-V architectures.
+          </p>
+        </div>
+
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Phase II Direct Transition</h3>
+            <span class="px-2 py-0.5 rounded text-xs font-mono-code bg-purple-950 text-purple-300 border border-purple-800">TRL 6 Prototype</span>
+          </div>
+          <div class="p-3 bg-gray-950/80 rounded-xl border border-gray-800">
+            <div class="text-sm font-bold text-purple-300">NASA Phase II Transition Goal</div>
+            <div class="text-xs text-gray-400 mt-0.5">Commercial Lunar Payload Services (CLPS)</div>
+            <div class="text-xs font-mono-code text-cyan-300 mt-2 font-semibold">Award Target: $850,000 – $1.25M</div>
+          </div>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            Deliver qualified full-scale 20m mast deployment package and dual-axis drive gimbal ready for integration onto commercial lunar lander payload decks for Artemis base camp power.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- 6-Month Work Breakdown Milestones -->
+      <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-6">
+        <h3 class="text-base font-bold text-white mb-4 flex items-center space-x-2">
+          <i data-lucide="calendar" class="w-5 h-5 text-cyan-400"></i>
+          <span>Phase I Milestone Work Breakdown Structure (Months 1 – 6)</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono-code">
+          
+          <div class="bg-gray-950/70 p-4 rounded-xl border border-gray-800 space-y-2">
+            <div class="text-xs text-cyan-400 font-bold">Month 1–2: Milestone 1</div>
+            <div class="text-sm font-semibold text-white">Coupled Thermo-Elastic FEA Modeling</div>
+            <p class="text-[11px] text-gray-400 font-sans">
+              Generate 3D transient thermal gradient models of 20m mast under lunar low-sun grazing conditions ($1.5^\circ$). Formulate Euler-Bernoulli camber maps in MATLAB/Simulink.
+            </p>
+            <div class="text-[10px] text-emerald-400">Deliverable: D1 Mast Deflection Atlas</div>
+          </div>
+
+          <div class="bg-gray-950/70 p-4 rounded-xl border border-gray-800 space-y-2">
+            <div class="text-xs text-cyan-400 font-bold">Month 3–4: Milestone 2</div>
+            <div class="text-sm font-semibold text-white">Phase-Energy Inversion Algorithm</div>
+            <p class="text-[11px] text-gray-400 font-sans">
+              Develop real-time recursive solver linking crater receiver flux ($E$) to mechanical gimbal angle ($\theta$). Implement directional hysteresis gate to cancel harmonic backlash.
+            </p>
+            <div class="text-[10px] text-emerald-400">Deliverable: D2 Sentry C++ Algorithm</div>
+          </div>
+
+          <div class="bg-gray-950/70 p-4 rounded-xl border border-gray-800 space-y-2">
+            <div class="text-xs text-cyan-400 font-bold">Month 4–5: Milestone 3</div>
+            <div class="text-sm font-semibold text-white">UCF CATER Hardware-in-the-Loop</div>
+            <p class="text-[11px] text-gray-400 font-sans">
+              Mount scaled composite mast and direct-drive gimbal in UCF cryogenic vacuum chamber. Simulate solar side heating with IR arrays; inject 40 arcsec backlash. Verify autonomous lock.
+            </p>
+            <div class="text-[10px] text-emerald-400">Deliverable: D3 Cryo-Chamber Lock Test</div>
+          </div>
+
+          <div class="bg-gray-950/70 p-4 rounded-xl border border-gray-800 space-y-2">
+            <div class="text-xs text-cyan-400 font-bold">Month 6: Milestone 4</div>
+            <div class="text-sm font-semibold text-white">Phase II Flight Spec & TRL-5 Pack</div>
+            <p class="text-[11px] text-gray-400 font-sans">
+              Finalize rad-hardened embedded firmware package for NASA SpaceCube processor. Complete CLPS payload interface specification and joint commercial transition roadmap.
+            </p>
+            <div class="text-[10px] text-emerald-400">Deliverable: D4 Final Report & Phase II Plan</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: COMMERCIAL & NATIONWIDE ARR ($218M) -->
+    <!-- ========================================== -->
+    <div id="viewARR" class="hidden space-y-6">
+      
+      <!-- Executive Summary Banner -->
+      <div class="bg-gradient-to-r from-emerald-950/40 via-gray-900/60 to-cyan-950/40 border border-emerald-900/60 p-6 rounded-2xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="px-2.5 py-1 text-xs font-mono-code font-bold rounded bg-emerald-900 text-emerald-200">Executive Commercial Thesis</span>
+              <span class="text-xs font-mono-code text-cyan-300">Dual-Use Civil Optics & Grid Solar</span>
+            </div>
+            <h2 class="text-xl font-bold text-white tracking-wide mt-2">
+              Transforming Structural Thermal Warping from a Catastrophic Failure Mode into an Autonomous Software Feedback Loop
+            </h2>
+            <p class="text-xs text-gray-300 mt-1 max-w-3xl">
+              SolarReflect eliminates the need for heavy, expensive invar trusses, high-precision astronomical gearboxes, and manual recalibration crews across multi-gigawatt terrestrial CSP towers and deep-space solar concentrators.
+            </p>
+          </div>
+          <div class="bg-gray-950/80 border border-gray-800 p-4 rounded-xl text-right font-mono-code shrink-0">
+            <div class="text-xs text-gray-400">Mature Nationwide ARR</div>
+            <div class="text-2xl font-bold text-emerald-400">$218.4M</div>
+            <div class="text-xs text-gray-500 mt-1">Enterprise Valuation (10x): <span class="text-cyan-400 font-semibold">$2.18B</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commercial Verticals Table -->
+      <div class="bg-gray-900/60 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+            <i data-lucide="table" class="w-4 h-4 text-cyan-400"></i>
+            <span>Commercial Market Segmentation & ARR Breakdown</span>
+          </h3>
+          <span class="text-xs font-mono-code text-gray-400">Civil & Commercial Software Licensing Only</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-gray-950/80 border-b border-gray-800 font-mono-code text-gray-400">
+                <th class="p-3.5">Commercial Sector</th>
+                <th class="p-3.5">Target Application</th>
+                <th class="p-3.5">SaaS / Runtime Pricing Metric</th>
+                <th class="p-3.5">Asset Base Calculation</th>
+                <th class="p-3.5 text-right">Mature Annual ARR</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800 font-mono-code">
+              
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                  <span>Utility Molten-Salt CSP</span>
+                </td>
+                <td class="p-3.5 text-gray-300 font-sans">Terrestrial tower receiver tracking correction</td>
+                <td class="p-3.5 text-cyan-300">$320 / heliostat mirror / year</td>
+                <td class="p-3.5 text-gray-400">220,000 mirrors across US/EU/MENA</td>
+                <td class="p-3.5 font-bold text-emerald-400 text-right">$70.4M</td>
+              </tr>
+
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                  <span>Artemis & Commercial Lunar</span>
+                </td>
+                <td class="p-3.5 text-gray-300 font-sans">Polar PSR crater power relay masts (CLPS)</td>
+                <td class="p-3.5 text-cyan-300">$1.25M / mission cluster / year</td>
+                <td class="p-3.5 text-gray-400">32 polar power relay masts</td>
+                <td class="p-3.5 font-bold text-emerald-400 text-right">$40.0M</td>
+              </tr>
+
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                  <span>LEO Deep-Space Optical Comm</span>
+                </td>
+                <td class="p-3.5 text-gray-300 font-sans">Satellite inter-link beam steering against solar thermal bloom</td>
+                <td class="p-3.5 text-cyan-300">$4,800 / satellite link node / year</td>
+                <td class="p-3.5 text-gray-400">8,500 active commercial optical terminals</td>
+                <td class="p-3.5 font-bold text-emerald-400 text-right">$40.8M</td>
+              </tr>
+
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span>Semiconductor Solar Thermal Sintering</span>
+                </td>
+                <td class="p-3.5 text-gray-300 font-sans">High-flux cleanroom furnace optical focusers</td>
+                <td class="p-3.5 text-cyan-300">$18,000 / tool controller / year</td>
+                <td class="p-3.5 text-gray-400">1,800 solar CVD & quartz sintering tools</td>
+                <td class="p-3.5 font-bold text-emerald-400 text-right">$32.4M</td>
+              </tr>
+
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                  <span>Autonomous Ag & Greenhouses</span>
+                </td>
+                <td class="p-3.5 text-gray-300 font-sans">Dynamic dual-axis sunlight concentrators</td>
+                <td class="p-3.5 text-cyan-300">$45 / smart reflector node / year</td>
+                <td class="p-3.5 text-gray-400">770,000 agricultural robotic reflector arrays</td>
+                <td class="p-3.5 font-bold text-emerald-400 text-right">$34.8M</td>
+              </tr>
+
+            </tbody>
+            <tfoot>
+              <tr class="bg-gray-950 font-mono-code border-t-2 border-gray-700">
+                <td colspan="4" class="p-3.5 text-right font-bold text-white uppercase">Total Nationwide Mature ARR:</td>
+                <td class="p-3.5 font-bold text-emerald-300 text-right text-sm">$218,400,000</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Industry Deep-Dive Cards: The Physics & Why Competitors Missed It -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center space-x-2 text-amber-400">
+            <i data-lucide="flame" class="w-5 h-5"></i>
+            <h4 class="text-sm font-bold uppercase tracking-wider text-white">Utility Concentrated Solar Power (CSP)</h4>
+          </div>
+          <div class="p-3 bg-gray-950/70 rounded-xl border border-gray-800 text-xs">
+            <span class="text-cyan-400 font-semibold font-mono-code block mb-1">Physics in 1 Sentence:</span>
+            <p class="text-gray-300">
+              When wind shear and solar expansion warp 150m central receiver towers by 30 cm, heliostat focal points drift off the narrow receiver cavity aperture into spillage zones.
+            </p>
+          </div>
+          <div class="p-3 bg-gray-950/70 rounded-xl border border-gray-800 text-xs">
+            <span class="text-rose-400 font-semibold font-mono-code block mb-1">Why Incumbents Missed It:</span>
+            <p class="text-gray-400">
+              Incumbents spent tens of millions pouring hundreds of tons of structural concrete and installing optical camera towers that get blinded by desert dust storms, rather than running kinematic inversion software off target temperature telemetry.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center space-x-2 text-cyan-400">
+            <i data-lucide="satellite" class="w-5 h-5"></i>
+            <h4 class="text-sm font-bold uppercase tracking-wider text-white">Laser Satellite Cross-Links</h4>
+          </div>
+          <div class="p-3 bg-gray-950/70 rounded-xl border border-gray-800 text-xs">
+            <span class="text-cyan-400 font-semibold font-mono-code block mb-1">Physics in 1 Sentence:</span>
+            <p class="text-gray-300">
+              Entering orbital eclipse transitions subjects satellite optical bench trusses to $+80^\circ\text{C} \to -65^\circ\text{C}$ thermal snaps, snapping pointing angles outside the sub-micro-radian laser beam divergence.
+            </p>
+          </div>
+          <div class="p-3 bg-gray-950/70 rounded-xl border border-gray-800 text-xs">
+            <span class="text-rose-400 font-semibold font-mono-code block mb-1">Why Incumbents Missed It:</span>
+            <p class="text-gray-400">
+              Aerospace manufacturers rely on power-hungry active resistive heaters that drain 40% of satellite bus battery reserves, instead of real-time software calibration of optical received signal strength indicator (RSSI) phase curves.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Contact & Action Footer -->
+      <div class="bg-gray-950 border border-gray-800 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h4 class="text-sm font-bold text-white">Commercial Partnership & Technology Licensing</h4>
+          <p class="text-xs text-gray-400 mt-1">SolarReflect flight software binaries and closed-loop kinematic IP are available for defense, commercial space, and utility solar primes.</p>
+        </div>
+        <a href="mailto:support@rfwavecode.com" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono-code text-xs font-semibold shadow-lg shadow-cyan-950/60 transition flex items-center space-x-2 shrink-0">
+          <i data-lucide="mail" class="w-4 h-4"></i>
+          <span>support@rfwavecode.com</span>
+        </a>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT: LOGIC, PHYSICS, CANVAS & CHARTS-->
+  <!-- ========================================== -->
+  <script>
+    // Tab Switching Dictionary & Controller
+    const tabMapping = {
+      'sim': { viewId: 'viewSim', btnId: 'tabBtnSim' },
+      'physics': { viewId: 'viewPhysics', btnId: 'tabBtnPhysics' },
+      'proposal': { viewId: 'viewProposal', btnId: 'tabBtnProposal' },
+      'arr': { viewId: 'viewARR', btnId: 'tabBtnARR' }
+    };
+
+    function switchTab(targetKey) {
+      Object.keys(tabMapping).forEach(key => {
+        const item = tabMapping[key];
+        const viewEl = document.getElementById(item.viewId);
+        const btnEl = document.getElementById(item.btnId);
+
+        if (key === targetKey) {
+          viewEl.classList.remove('hidden');
+          btnEl.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-2 bg-cyan-600 text-white shadow-md shadow-cyan-950";
+        } else {
+          viewEl.classList.add('hidden');
+          btnEl.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center space-x-2 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50";
+        }
+      });
+
+      // Typeset MathJax when switching to mathematical views
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise();
+      }
+
+      // Re-render and resize canvas if switching back to simulation
+      if (targetKey === 'sim') {
+        setTimeout(() => {
+          resizeCanvas();
+          if (phaseChart) phaseChart.resize();
+          if (energyChart) energyChart.resize();
+          if (correctionChart) correctionChart.resize();
+        }, 50);
+      }
+    }
+
+    // ==========================================
+    // PHYSICAL SYSTEM STATE & SIMULATION PARAMS
+    // ==========================================
+    const state = {
+      // Celestial & Orbit
+      sunElevation: 1.5, // degrees above horizon
+      sunAzimuth: 0.0,   // degrees
+      orbitSpeed: 3,     // simulation speed multiplier
+
+      // Thermal & Mechanical parameters
+      deltaT: 145,       // Kelvin (front-to-back mast delta)
+      mastCTE: 1.2e-6,   // 1/K
+      mastHeight: 20.0,  // meters
+      mastDiameter: 0.35,// meters
+      backlashArcsec: 18.5,
+
+      // Optical & Target Geometry
+      throwDistance: 2400.0, // meters to PSR crater bottom
+      receiverDiameter: 12.0, // meters
+
+      // Gimbal Mechanical Phase Angle
+      mechanicalTheta: 0.0,  // radians (measured by motor encoder)
+      nominalTrackingTheta: 0.0,
+
+      // Live Inversion Sentry
+      closedLoopActive: true,
+      kinematicCorrection: 0.0, // radians offset applied by sentry
+
+      // Telemetry metrics
+      craterFlux: 1.34, // kW/m²
+      interception: 99.2, // %
+      mastTipDisplacement: 0.0, // mm
+      actualBeamOffsetAngle: 0.0, // total angle off target
+
+      // Time accumulator
+      tick: 0
+    };
+
+    // Sliders & Controls Binding
+    function updateSliders() {
+      state.deltaT = parseFloat(document.getElementById('sliderMastFlex').value);
+      state.backlashArcsec = parseFloat(document.getElementById('sliderBacklash').value);
+      state.orbitSpeed = parseInt(document.getElementById('sliderOrbitSpeed').value);
+
+      const dL = ((state.mastCTE * state.deltaT * (state.mastHeight ** 2)) / (2 * state.mastDiameter) * 1000).toFixed(1);
+      document.getElementById('mastFlexVal').innerText = `${state.deltaT} K (ΔL = +${dL} mm)`;
+      document.getElementById('backlashVal').innerText = `± ${state.backlashArcsec.toFixed(1)} arcsec`;
+      document.getElementById('orbitSpeedVal').innerText = `${(state.orbitSpeed * 0.33).toFixed(1)}x Sim Rate`;
+    }
+
+    function toggleClosedLoop() {
+      state.closedLoopActive = !state.closedLoopActive;
+      const btn = document.getElementById('toggleClosedLoopBtn');
+      const badge = document.getElementById('sentryStatusBadge');
+      const icon = document.getElementById('sentryStatusIcon');
+
+      if (state.closedLoopActive) {
+        btn.innerText = "ENABLED (CLOSED LOOP)";
+        btn.className = "px-3 py-1 rounded text-xs font-bold font-mono-code uppercase transition-all bg-emerald-600 text-white shadow-lg shadow-emerald-950 hover:bg-emerald-500";
+        badge.innerText = "NOMINAL CORRELATION";
+        badge.className = "text-sm font-semibold font-mono-code text-emerald-400";
+        icon.className = "p-2.5 rounded-lg bg-emerald-950/80 border border-emerald-800 text-emerald-400";
+      } else {
+        btn.innerText = "DISABLED (OPEN LOOP)";
+        btn.className = "px-3 py-1 rounded text-xs font-bold font-mono-code uppercase transition-all bg-rose-600 text-white shadow-lg shadow-rose-950 hover:bg-rose-500";
+        badge.innerText = "OPEN LOOP DECOUPLING";
+        badge.className = "text-sm font-semibold font-mono-code text-rose-400 animate-pulse";
+        icon.className = "p-2.5 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-400";
+      }
+    }
+
+    function resetNominalState() {
+      document.getElementById('sliderMastFlex').value = 145;
+      document.getElementById('sliderBacklash').value = 18;
+      document.getElementById('sliderOrbitSpeed').value = 3;
+      updateSliders();
+      if (!state.closedLoopActive) toggleClosedLoop();
+    }
+
+    function injectFault(type) {
+      if (type === 'thermal_snap') {
+        document.getElementById('sliderMastFlex').value = 295;
+        updateSliders();
+      } else if (type === 'gear_stick') {
+        document.getElementById('sliderBacklash').value = 75;
+        updateSliders();
+      } else if (type === 'crater_drift') {
+        if (state.closedLoopActive) toggleClosedLoop();
+        document.getElementById('sliderMastFlex').value = 260;
+        document.getElementById('sliderBacklash').value = 60;
+        updateSliders();
+      }
+    }
+
+    // ==========================================
+    // CHART.JS INITIALIZATION (3 CHARTS)
+    // ==========================================
+    let phaseChart, energyChart, correctionChart;
+
+    // Generate nominal Gaussian reference curve for Phase Space
+    const nominalCurveData = [];
+    for (let th = -4.0; th <= 4.0; th += 0.2) {
+      const e = 1.361 * 0.94 * Math.exp(-0.5 * Math.pow(th / 1.15, 2));
+      nominalCurveData.push({ x: th, y: Math.max(0.01, e) });
+    }
+
+    function initCharts() {
+      // 1. Diagnostic Phase-Space (Energy E vs Phase θ)
+      const ctxPhase = document.getElementById('phaseSpaceChart').getContext('2d');
+      phaseChart = new Chart(ctxPhase, {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: 'Nominal Correlated Band',
+              data: nominalCurveData,
+              showLine: true,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Hazardous Beam Walkout (>2.2 mrad)',
+              data: [
+                { x: -4.0, y: 0.3 }, { x: -2.2, y: 0.3 },
+                { x: 2.2, y: 0.3 }, { x: 4.0, y: 0.3 }
+              ],
+              showLine: true,
+              borderColor: 'rgba(239, 68, 68, 0.6)',
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false
+            },
+            {
+              label: 'Live Sentry Pointing State',
+              data: [{ x: 0.0, y: 1.28 }],
+              borderColor: '#38bdf8',
+              backgroundColor: '#0284c7',
+              pointRadius: 7,
+              pointHoverRadius: 9,
+              pointBorderColor: '#ffffff',
+              pointBorderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: {
+              title: { display: true, text: 'Phase Angle Difference (θ_mech - θ_target) [mrad]', color: '#94a3b8', font: { size: 10, family: 'JetBrains Mono' } },
+              grid: { color: '#1e293b' },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 } },
+              min: -4.0,
+              max: 4.0
+            },
+            y: {
+              title: { display: true, text: 'Crater Target Flux E [kW/m²]', color: '#94a3b8', font: { size: 10, family: 'JetBrains Mono' } },
+              grid: { color: '#1e293b' },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 } },
+              min: 0,
+              max: 1.5
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+
+      // 2. Telemetry Flux Time Series
+      const ctxEnergy = document.getElementById('energyStreamChart').getContext('2d');
+      energyChart = new Chart(ctxEnergy, {
+        type: 'line',
+        data: {
+          labels: Array(30).fill(''),
+          datasets: [{
+            data: Array(30).fill(1.28),
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: { display: false },
+            y: {
+              grid: { color: '#1e293b' },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 } },
+              min: 0,
+              max: 1.5
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // 3. Correction Offset Time Series
+      const ctxCorr = document.getElementById('correctionStreamChart').getContext('2d');
+      correctionChart = new Chart(ctxCorr, {
+        type: 'line',
+        data: {
+          labels: Array(30).fill(''),
+          datasets: [{
+            data: Array(30).fill(0.0),
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: true,
+            tension: 0.2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: { display: false },
+            y: {
+              grid: { color: '#1e293b' },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 } },
+              min: -3.0,
+              max: 3.0
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    // ==========================================
+    // PHYSICAL SIMULATION UPDATE LOOP
+    // ==========================================
+    function stepSimulation() {
+      state.tick++;
+
+      // Advance Sun Azimuth slowly around the lunar horizon
+      const sunSpeedRad = 0.003 * state.orbitSpeed;
+      state.sunAzimuth += sunSpeedRad;
+      if (state.sunAzimuth > Math.PI * 2) state.sunAzimuth -= Math.PI * 2;
+
+      // 1. Calculate physical thermal mast warping angle:
+      // theta_warp = (alpha * deltaT * L) / D (in radians)
+      const mastBendingAngleRad = (state.mastCTE * state.deltaT * state.mastHeight) / state.mastDiameter;
+      const mastBendingMrad = mastBendingAngleRad * 1000.0;
+
+      // Calculate mast tip lateral displacement (mm)
+      state.mastTipDisplacement = (0.5 * (mastBendingAngleRad) * state.mastHeight) * 1000.0;
+
+      // 2. Harmonic backlash jitter
+      const backlashRad = (state.backlashArcsec / 206265.0) * Math.sin(state.tick * 0.12);
+      const backlashMrad = backlashRad * 1000.0;
+
+      // Nominal target pointing angle relative to crater receiver (0 is dead-center)
+      const nominalAngleTargetMrad = 0.0;
+
+      // Uncorrected mechanical error accumulated by mast bending + backlash
+      const uncorrectedErrorMrad = mastBendingMrad + backlashMrad;
+
+      // 3. Autonomous Inversion Sentry
+      if (state.closedLoopActive) {
+        // Closed loop observer tracks peak of E and inverts kinematic offset
+        // Smooth Kalman convergence
+        const targetOffset = -uncorrectedErrorMrad;
+        state.kinematicCorrection += (targetOffset - state.kinematicCorrection) * 0.15;
+      } else {
+        // Open loop drifts with thermal flexing
+        state.kinematicCorrection *= 0.95; // decay correction
+      }
+
+      // Net beam pointing offset in mrad
+      state.actualBeamOffsetAngle = uncorrectedErrorMrad + state.kinematicCorrection;
+
+      // 4. Calculate receiver flux (kW/m²) from Gaussian projection
+      const beamHalfWidthMrad = 1.15; // beam spread to crater floor
+      const peakFlux = 1.361 * 0.94; // 1.28 kW/m²
+      const gaussianFactor = Math.exp(-0.5 * Math.pow(state.actualBeamOffsetAngle / beamHalfWidthMrad, 2));
+      state.craterFlux = Math.max(0.01, peakFlux * gaussianFactor);
+
+      // Interception efficiency
+      state.interception = Math.min(100.0, Math.max(0.5, (gaussianFactor * 100.0)));
+
+      // 5. Update Telemetry HUD DOM
+      document.getElementById('telemetryPhase').innerText = `${state.actualBeamOffsetAngle >= 0 ? '+' : ''}${state.actualBeamOffsetAngle.toFixed(3)} mrad`;
+      document.getElementById('telemetryEnergy').innerText = `${state.craterFlux.toFixed(2)} kW/m²`;
+      document.getElementById('telemetryWarp').innerText = `+${mastBendingMrad.toFixed(2)} mrad`;
+      document.getElementById('mastTipMm').innerText = `${state.mastTipDisplacement.toFixed(1)} mm`;
+      document.getElementById('backlashArcsec').innerText = `${state.backlashArcsec.toFixed(1)} arcsec`;
+      document.getElementById('interceptPct').innerText = `${state.interception.toFixed(1)}%`;
+      document.getElementById('avgFluxLabel').innerText = `Flux: ${state.craterFlux.toFixed(2)} kW/m²`;
+      document.getElementById('correctionLabel').innerText = `Corr: ${state.kinematicCorrection.toFixed(2)} mrad`;
+
+      // 6. Update Chart.js datasets every 3 ticks
+      if (state.tick % 3 === 0) {
+        // Update Phase Space point
+        phaseChart.data.datasets[2].data = [{
+          x: parseFloat(state.actualBeamOffsetAngle.toFixed(3)),
+          y: parseFloat(state.craterFlux.toFixed(3))
+        }];
+        phaseChart.update('none');
+
+        // Update Energy Stream Chart
+        const energyData = energyChart.data.datasets[0].data;
+        energyData.shift();
+        energyData.push(parseFloat(state.craterFlux.toFixed(3)));
+        energyChart.update('none');
+
+        // Update Correction Stream Chart
+        const corrData = correctionChart.data.datasets[0].data;
+        corrData.shift();
+        corrData.push(parseFloat(state.kinematicCorrection.toFixed(3)));
+        correctionChart.update('none');
+      }
+
+      // 7. Render 2D Lunar Visualizer
+      drawLunarSimulation();
+    }
+
+    // ==========================================
+    // 2D CANVAS VISUALIZER (LUNAR MAST & PSR CRATER)
+    // ==========================================
+    const canvas = document.getElementById('lunarCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width || 600;
+      const h = rect.height || 380;
+      canvas.width = w * window.devicePixelRatio;
+      canvas.height = h * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+    });
+
+    function drawLunarSimulation() {
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width || 600;
+      const height = rect.height || 380;
+
+      // Clear Canvas Dark Lunar Deep Space
+      ctx.fillStyle = '#02040a';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw Distant Lunar Stars
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 25; i++) {
+        const sx = (Math.sin(i * 99 + 12) * 0.5 + 0.5) * width;
+        const sy = (Math.cos(i * 33 + 77) * 0.5 + 0.5) * (height * 0.45);
+        ctx.fillRect(sx, sy, 1, 1);
+      }
+
+      // Draw Low Grazing Lunar Sun
+      const sunX = 40 + Math.sin(state.tick * 0.01) * 15;
+      const sunY = 55 + Math.cos(state.tick * 0.01) * 5;
+
+      const sunGlow = ctx.createRadialGradient(sunX, sunY, 4, sunX, sunY, 55);
+      sunGlow.addColorStop(0, 'rgba(255, 245, 200, 1.0)');
+      sunGlow.addColorStop(0.2, 'rgba(245, 158, 11, 0.4)');
+      sunGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = sunGlow;
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 55, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#fffbeb';
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 9, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Topography: Shackleton Crater Rim Slope & Permanently Shadowed Region
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.65);
+      // Rim peak where mast is anchored
+      const rimPeakX = width * 0.28;
+      const rimPeakY = height * 0.52;
+      ctx.lineTo(rimPeakX, rimPeakY);
+      // Steep drop into cold PSR interior
+      const psrBottomX = width * 0.78;
+      const psrBottomY = height * 0.88;
+      ctx.lineTo(psrBottomX, psrBottomY);
+      ctx.lineTo(width, height * 0.86);
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+
+      // Regolith gradient fill
+      const regolithGrad = ctx.createLinearGradient(0, rimPeakY, width, height);
+      regolithGrad.addColorStop(0, '#1e293b');
+      regolithGrad.addColorStop(0.3, '#0f172a');
+      regolithGrad.addColorStop(1, '#020617');
+      ctx.fillStyle = regolithGrad;
+      ctx.fill();
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Draw Permanently Shadowed Boundary Mask (pitch black inside crater)
+      ctx.fillStyle = 'rgba(1, 3, 8, 0.88)';
+      ctx.beginPath();
+      ctx.moveTo(rimPeakX + 10, rimPeakY);
+      ctx.lineTo(width, rimPeakY + 45);
+      ctx.lineTo(width, height);
+      ctx.lineTo(rimPeakX + 10, height);
+      ctx.closePath();
+      ctx.fill();
+
+      // Label PSR Crater Interior
+      ctx.fillStyle = '#475569';
+      ctx.font = '10px JetBrains Mono';
+      ctx.fillText('PERMANENTLY SHADOWED REGION (PSR) - 40 Kelvin', width * 0.42, height * 0.95);
+
+      // --- Draw 20-Meter Mast on the Rim Peak ---
+      const mastBaseX = rimPeakX;
+      const mastBaseY = rimPeakY;
+      const mastLenPx = 110;
+
+      // Mast bending calculation (exaggerated slightly for graphical clarity)
+      const bendScale = 0.5;
+      const tipOffsetX = (state.mastTipDisplacement * bendScale);
+      const mastTipX = mastBaseX + tipOffsetX;
+      const mastTipY = mastBaseY - mastLenPx;
+
+      // Draw mast truss structure (curved spline under thermal gradient)
+      ctx.beginPath();
+      ctx.moveTo(mastBaseX - 3, mastBaseY);
+      ctx.quadraticCurveTo(mastBaseX + (tipOffsetX * 0.5) - 2, mastBaseY - (mastLenPx * 0.5), mastTipX - 2, mastTipY);
+      ctx.lineTo(mastTipX + 2, mastTipY);
+      ctx.quadraticCurveTo(mastBaseX + (tipOffsetX * 0.5) + 2, mastBaseY - (mastLenPx * 0.5), mastBaseX + 3, mastBaseY);
+      ctx.closePath();
+
+      // Mast color (Sunlit glowing side vs cold shadow side)
+      const mastGrad = ctx.createLinearGradient(mastBaseX - 10, 0, mastBaseX + 10, 0);
+      mastGrad.addColorStop(0, '#f59e0b'); // Hot sunward face
+      mastGrad.addColorStop(1, '#0284c7'); // Cold radiative shadow face
+      ctx.fillStyle = mastGrad;
+      ctx.fill();
+
+      // Base Mounting Foundation
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(mastBaseX - 8, mastBaseY - 4, 16, 6);
+
+      // --- Heliostat Gimbal & Mirror ---
+      ctx.save();
+      ctx.translate(mastTipX, mastTipY);
+
+      // Mirror normal angle is influenced by sun position, kinematics, and uncorrected error
+      // When closed-loop is ON, beam targets the crater receiver accurately
+      const mirrorAngle = Math.PI * 0.22 + (state.actualBeamOffsetAngle * 0.05);
+      ctx.rotate(mirrorAngle);
+
+      // Gimbal housing yoke
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(-6, -4, 12, 8);
+
+      // Mirror Reflector Surface (Silicon carbide flat)
+      ctx.fillStyle = '#e0f2fe';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.fillRect(-22, -3, 44, 4);
+      ctx.strokeRect(-22, -3, 44, 4);
+
+      ctx.restore();
+
+      // --- Draw Sunlight Incident Ray to Mirror ---
+      ctx.strokeStyle = 'rgba(253, 224, 71, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(sunX, sunY);
+      ctx.lineTo(mastTipX, mastTipY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // --- Target Receiver on Crater Floor ---
+      const recX = psrBottomX + 20;
+      const recY = psrBottomY - 8;
+
+      // Target Receiver Station
+      ctx.fillStyle = '#065f46';
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(recX, recY, 24, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#34d399';
+      ctx.beginPath();
+      ctx.arc(recX, recY, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#a7f3d0';
+      ctx.font = '9px JetBrains Mono';
+      ctx.fillText('CRATER RECEIVER (Target)', recX - 45, recY + 22);
+
+      // --- Reflected Solar Beam to Crater ---
+      // Beam target point varies with actualBeamOffsetAngle
+      const beamWalkoutPx = (state.actualBeamOffsetAngle) * 35.0; // scale factor
+      const beamHitX = recX + beamWalkoutPx;
+      const beamHitY = recY;
+
+      // Reflected Solar Beam polygon
+      ctx.beginPath();
+      ctx.moveTo(mastTipX, mastTipY);
+      ctx.lineTo(beamHitX - 18, beamHitY);
+      ctx.lineTo(beamHitX + 18, beamHitY);
+      ctx.closePath();
+
+      const beamGrad = ctx.createLinearGradient(mastTipX, mastTipY, beamHitX, beamHitY);
+      if (state.interception > 75) {
+        beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.7)');
+        beamGrad.addColorStop(1, 'rgba(253, 224, 71, 0.55)');
+      } else {
+        // Displaced beam glowing red/warning
+        beamGrad.addColorStop(0, 'rgba(239, 68, 68, 0.6)');
+        beamGrad.addColorStop(1, 'rgba(244, 63, 94, 0.35)');
+      }
+      ctx.fillStyle = beamGrad;
+      ctx.fill();
+
+      // Focal Spot on the Ground
+      ctx.beginPath();
+      ctx.ellipse(beamHitX, beamHitY, 16, 5, 0, 0, Math.PI * 2);
+      if (state.interception > 75) {
+        ctx.fillStyle = 'rgba(254, 240, 138, 0.8)';
+        ctx.shadowColor = '#fef08a';
+        ctx.shadowBlur = 15;
+      } else {
+        ctx.fillStyle = 'rgba(248, 113, 113, 0.85)';
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 15;
+      }
+      ctx.fill();
+      ctx.shadowBlur = 0; // reset shadow
+    }
+
+    // ==========================================
+    // INITIALIZATION ON WINDOW LOAD
+    // ==========================================
+    window.onload = function() {
+      // Init Lucide Icons
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+
+      // Initialize visualizers
+      resizeCanvas();
+      initCharts();
+      updateSliders();
+
+      // Trigger typeset
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise();
+      }
+
+      // Run simulation step at 25 Hz (every 40ms)
+      setInterval(stepSimulation, 40);
+    };
+  </script>
+</body>
+</html>
